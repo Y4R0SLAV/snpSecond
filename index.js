@@ -160,6 +160,8 @@ const removeTodo = (id) => {
 const initializeTodos = () => {
   todoListUl.innerHTML = ''
 
+  completedCount = 0
+
   todoList.forEach(item => {
     addTodoToUL(item.title, item.id, item.completed)
 
@@ -220,11 +222,10 @@ const toggleAllTodos = () => {
   // все тудушки выполнены надо отменить их
   if (localCompletedCount === len) {
     allIdsList.forEach(id => setCheckedTodo(id))
-    completedCount = 0
   } else {
     // есть тудушки, которые выполнены и те, которым нужно установить checked тру
     notCheckedIdsList.forEach(id => setCheckedTodo(id))
-    completedCount = localCompletedCount
+
   }
 
   initializeTodos()
@@ -254,6 +255,64 @@ const setCountNotCompletedTodos = () => {
 }
 
 
+// i = 0, 1, 2
+const setFilterSelected = (i) => {
+  // если добавить ещё один фильтр, то расширить будет трудновато, но вряд ли его ведь добавят))
+  const all = filterAllBtn.children[0]
+  const active = filterActiveBtn.children[0]
+  const comp = filterCompletedBtn.children[0]
+
+  const cn = 'selected'
+
+  if (i === 0) {
+    if (all.classList.contains(cn)) {
+      return
+    } else {
+      if (active.classList.contains(cn)) {
+        active.classList.remove(cn)
+      } else {
+        comp.classList.remove(cn)
+      }
+
+      all.classList.add(cn)
+      return
+    }
+  }
+
+  if (i === 1) {
+    if (active.classList.contains(cn)) {
+      return
+    } else {
+      if (all.classList.contains(cn)) {
+        all.classList.remove(cn)
+      } else {
+        comp.classList.remove(cn)
+      }
+
+      active.classList.add(cn)
+      return
+    }
+  }
+
+  if (i === 2) {
+    if (comp.classList.contains(cn)) {
+      return
+    } else {
+      if (active.classList.contains(cn)) {
+        active.classList.remove(cn)
+      } else {
+        all.classList.remove(cn)
+      }
+
+      comp.classList.add(cn)
+      return
+    }
+  }
+  // не свитч кейс просто потому что так хочется
+
+  console.log('Ошибка в setFilterSelected, передано некорректное значение. Принимаются только 0, 1 и 2')
+}
+
 // обработчики нижних трех кнопок в футере
 const showAll = () => {
   const children = todoListUl.children;
@@ -263,6 +322,8 @@ const showAll = () => {
       currentChild.classList.remove('hide')
     }
   }
+
+  setFilterSelected(0)
 }
 
 const showActive = () => {
@@ -274,8 +335,9 @@ const showActive = () => {
     } else if (currentChild.classList.contains('hide')) {
       currentChild.classList.remove('hide')
     }
-
   }
+
+  setFilterSelected(1)
 }
 
 const showCompleted = () => {
@@ -288,6 +350,8 @@ const showCompleted = () => {
       currentChild.classList.remove('hide')
     }
   }
+
+  setFilterSelected(2)
 }
 
 // удаление всех отмеченных тасков
