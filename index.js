@@ -1,8 +1,22 @@
 const todoListUl = document.querySelector('.todo__items')
-const btnAdd = document.querySelector(".add-todo")
 const newTodoInput = document.querySelector(".header__new-todo")
 const clearBtn = document.querySelector('.footer__button')
 const toggleAllBtn = document.querySelector('.todo__toggle-all')
+const footerCountBlock = document.querySelector('.footer__count')
+
+const filterAllBtn = document.querySelector('.filter-all')
+const filterActiveBtn = document.querySelector('.filter-active')
+const filterCompletedBtn = document.querySelector('.filter-completed')
+
+const url = window.location.href
+const activeString = '#/active'
+const completedString = '#/completed'
+
+let completedCount = 0
+let notCompletedCount = 0
+
+let todoList = JSON.parse(getTodosLS())
+
 
 const getTodosLS = () => {
   return localStorage.getItem('todos')
@@ -42,16 +56,27 @@ const createTodoNode = (title, id, completed) => {
   if (completed) {
     listItemCheckbox.checked = true
   }
+
   listItemCheckbox.addEventListener('click', (e) => {
     let check = e.target.checked
     setCheckedTodo(id)
     listItemCheckbox.checked = check
 
     if (check && !listItem.classList.contains('completed')) {
+      // поставить галочку
       listItem.classList.add('completed')
+      completedCount += 1
+      notCompletedCount -= 1
+      setCompletedBlockVisible()
+      setCountNotCompletedTodos()
     }
     if (!check && listItem.classList.contains('completed')) {
+      // удалить галочку
       listItem.classList.remove('completed')
+      completedCount -= 1
+      notCompletedCount += 1
+      setCompletedBlockVisible()
+      setCountNotCompletedTodos()
     }
   })
 
@@ -77,6 +102,7 @@ const createTodoNode = (title, id, completed) => {
     setTitleTodo(title, id)
   }
 
+
   editInput.addEventListener('focusout', () => changeHandler())
 
   editInput.addEventListener('keypress', (e) => {
@@ -85,7 +111,6 @@ const createTodoNode = (title, id, completed) => {
       changeHandler()
     }
   })
-
 
   listItem.append(blockItem, editInput)
   blockItem.append(listItemCheckbox, listItemLabel, buttonItem)
@@ -113,45 +138,46 @@ const createTodo = () => {
   addTodoToUL(title, id)
   todoList.push({ title, id, completed: false })
   setTodosLS()
+
+  notCompletedCount += 1
+  setCountNotCompletedTodos()
 }
 
 const removeTodo = (id) => {
+  const todoCompleted = todoList.find(x => x.id === id).completed
+
   const newArray = todoList.filter(todo => todo.id.toString() !== id.toString())
   todoList = newArray
 
+  if (todoCompleted) {
+    completedCount -= 1
+  } else {
+    notCompletedCount -= 1
+  }
+
   todoListUl.innerHTML = ""
   initializeTodos(todoList)
-  setTodosLS()
-}
-
-const setCheckedTodo = (id) => {
-  const newArray = todoList.map((todo) => {
-    if (todo.id.toString() === id.toString()) {
-      todo.completed = !todo.completed
-    }
-    return todo
-  })
-
-  todoList = newArray
   setTodosLS()
 }
 
 const initializeTodos = () => {
   todoListUl.innerHTML = ''
+
   todoList.forEach(item => {
     addTodoToUL(item.title, item.id, item.completed)
+
+    if (item.completed) {
+      completedCount += 1
+    }
   })
+
+  notCompletedCount = todoList.length - completedCount
+
+  setCompletedBlockVisible()
+  setCountNotCompletedTodos()
 }
 
-const clearCompleted = () => {
-  const newArray = todoList.filter(todo => todo.completed !== true)
-  todoList = newArray
-
-  todoListUl.innerHTML = ""
-  initializeTodos(todoList)
-  setTodosLS()
-}
-
+// изменить текст таска
 const setTitleTodo = (title, id) => {
   const newArray = todoList.map((todo) => {
     if (todo.id.toString() === id.toString()) {
@@ -164,9 +190,23 @@ const setTitleTodo = (title, id) => {
   setTodosLS()
 }
 
+// тут скорее даже не сет, а тоггл но ладно уж
+const setCheckedTodo = (id) => {
+  const newArray = todoList.map((todo) => {
+    if (todo.id.toString() === id.toString()) {
+      todo.completed = !todo.completed
+    }
+    return todo
+  })
+
+  todoList = newArray
+  setTodosLS()
+}
+
 const toggleAllTodos = () => {
   const len = todoList.length
-  let completedCount = 0
+  let localCompletedCount = 0
+
   const allIdsList = []
   const notCheckedIdsList = []
 
@@ -174,31 +214,121 @@ const toggleAllTodos = () => {
     allIdsList.push(item.id)
 
     if (item.completed === true) {
-      completedCount += 1
+      localCompletedCount += 1
     } else {
       notCheckedIdsList.push(item.id)
     }
   })
 
   // все тудушки выполнены надо отменить их
-  if (completedCount === len) {
+  if (localCompletedCount === len) {
     allIdsList.forEach(id => setCheckedTodo(id))
+    completedCount = 0
   } else {
     // есть тудушки, которые выполнены и те, которым нужно установить checked тру
     notCheckedIdsList.forEach(id => setCheckedTodo(id))
+    completedCount = localCompletedCount
   }
 
   initializeTodos()
 }
 
+// отображение количества оставшихся тасков
+const setCompletedBlockVisible = () => {
+  if (completedCount > 0 && clearBtn.classList.contains('hide')) {
+    clearBtn.classList.remove('hide')
+  }
+  if (completedCount === 0 && !clearBtn.classList.contains('hide')) {
+    clearBtn.classList.add('hide')
+  }
+}
 
-let todoList = JSON.parse(getTodosLS())
+const setCountNotCompletedTodos = () => {
+  const firstPart = notCompletedCount.toString()
+  let secondPart = ''
 
-btnAdd.addEventListener("click", () => createTodo())
-clearBtn.addEventListener("click", () => clearCompleted())
-toggleAllBtn.addEventListener("click", () => toggleAllTodos())
+  if (notCompletedCount === 1) {
+    secondPart = ' item left'
+  } else {
+    secondPart = ' items left'
+  }
 
-initializeTodos()
-console.log(todoListUl.children)
+  footerCountBlock.innerHTML = firstPart + secondPart
+}
 
 
+// обработчики нижних трех кнопок в футере
+const showAll = () => {
+  const children = todoListUl.children;
+  for (let i = 0; i < children.length; i++) {
+    const currentChild = children[i]
+    if (currentChild.classList.contains('hide')) {
+      currentChild.classList.remove('hide')
+    }
+  }
+}
+
+const showActive = () => {
+  const children = todoListUl.children;
+  for (let i = 0; i < children.length; i++) {
+    const currentChild = children[i]
+    if (currentChild.classList.contains('completed')) {
+      currentChild.classList.add('hide')
+    } else if (currentChild.classList.contains('hide')) {
+      currentChild.classList.remove('hide')
+    }
+
+  }
+}
+
+const showCompleted = () => {
+  const children = todoListUl.children;
+  for (let i = 0; i < children.length; i++) {
+    const currentChild = children[i]
+    if (!currentChild.classList.contains('completed')) {
+      currentChild.classList.add('hide')
+    } else if (currentChild.classList.contains('hide')) {
+      currentChild.classList.remove('hide')
+    }
+  }
+}
+
+// удаление всех отмеченных тасков
+const clearCompleted = () => {
+  const newArray = todoList.filter(todo => todo.completed !== true)
+  todoList = newArray
+
+  completedCount = 0
+
+  todoListUl.innerHTML = ""
+  initializeTodos(todoList)
+  setTodosLS()
+}
+
+const addEventListeners = () => {
+  filterAllBtn.addEventListener('click', () => showAll())
+  filterActiveBtn.addEventListener('click', () => showActive())
+  filterCompletedBtn.addEventListener('click', () => showCompleted())
+
+  clearBtn.addEventListener("click", () => clearCompleted())
+  toggleAllBtn.addEventListener("click", () => toggleAllTodos())
+
+  newTodoInput.addEventListener('focusout', () => createTodo())
+  newTodoInput.addEventListener('keypress', (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      createTodo()
+    }
+  })
+}
+
+
+const initializeApp = () => {
+  initializeTodos()
+
+  if (url.includes(activeString)) {
+    showActive()
+  } else if (url.includes(completedString)) {
+    showCompleted()
+  }
+}

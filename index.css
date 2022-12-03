@@ -21,6 +21,7 @@
   text-align: center;
   font-size: 100px;
   color: rgba(175, 47, 47, 0.15);
+  user-select: none;
 }
 
 .form form {
@@ -140,6 +141,10 @@
 .todo__items li.completed {
   color: #d9d9d9;
   text-decoration: line-through;
+}
+
+.todo__items li.hide {
+  display: none;
 }
 
 .todo__item {
@@ -269,4 +274,8 @@
 
 .todo__items li.editing .todo__item {
 	display: none;
+}
+
+.hide {
+  opacity: 0;
 }
