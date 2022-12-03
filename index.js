@@ -15,9 +15,6 @@ const completedString = '#/completed'
 let completedCount = 0
 let notCompletedCount = 0
 
-let todoList = JSON.parse(getTodosLS())
-
-
 const getTodosLS = () => {
   return localStorage.getItem('todos')
 }
@@ -305,6 +302,8 @@ const clearCompleted = () => {
   setTodosLS()
 }
 
+
+
 const addEventListeners = () => {
   filterAllBtn.addEventListener('click', () => showAll())
   filterActiveBtn.addEventListener('click', () => showActive())
@@ -322,8 +321,11 @@ const addEventListeners = () => {
   })
 }
 
+let todoList = JSON.parse(getTodosLS())
 
 const initializeApp = () => {
+  addEventListeners()
+
   initializeTodos()
 
   if (url.includes(activeString)) {
@@ -332,3 +334,5 @@ const initializeApp = () => {
     showCompleted()
   }
 }
+
+initializeApp()
