@@ -16,11 +16,14 @@ let completedCount = 0
 let notCompletedCount = 0
 
 const getTodosLS = () => {
-  return localStorage.getItem('todos')
+  // return localStorage.getItem('todos')
+  // try for github pages
+  return sessionStorage.getItem('todos')
 }
 
 const setTodosLS = () => {
-  localStorage.setItem('todos', JSON.stringify(todoList))
+  //  localStorage.setItem('todos', JSON.stringify(todoList))
+  return sessionStorage.setItem('todos', JSON.stringify(todoList))
 }
 
 const createTodoNode = (title, id, completed) => {
