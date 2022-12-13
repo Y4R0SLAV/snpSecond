@@ -20,8 +20,6 @@ const getTodosLS = () => {
 }
 
 const setTodosLS = () => {
-  console.log('set')
-  console.log(todoList)
   localStorage.setItem('todos', JSON.stringify(todoList))
 }
 
