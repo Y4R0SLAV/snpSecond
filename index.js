@@ -24,7 +24,7 @@ const setTodosLS = () => {
 }
 
 const createTodoNode = (title, id, completed) => {
-  // в ли добавляется класс completed если завеоешн или editing если меняется текст у тудушки
+  // в ли добавляется класс completed если завершен или editing если меняется текст у тудушки
   const html = `
       <div class="todo__item">
         <input class="todo__toggle" type="checkbox" ${completed ? "checked" : ""}>
@@ -38,9 +38,8 @@ const createTodoNode = (title, id, completed) => {
   if (completed) {
     todoNode.classList.add('completed')
   }
-  todoNode.innerHTML = html
 
-  addEventListenersToNode(todoNode, id)
+  todoNode.innerHTML = html
   return todoNode
 }
 
@@ -116,6 +115,7 @@ const addEventListenersToNode = (todoNode, id) => {
 
 const addTodoToUL = (title, id, completed = false) => {
   const newTodoNode = createTodoNode(title, id, completed)
+  addEventListenersToNode(newTodoNode, id)
   todoListUl.appendChild(newTodoNode)
 }
 
@@ -251,104 +251,87 @@ const setCountNotCompletedTodos = () => {
   footerCountBlock.innerHTML = firstPart + secondPart
 }
 
-
-// i = 0, 1, 2
-const setFilterSelected = (i) => {
+// i = all || active || completed
+const setFilterSelected = (filter) => {
   // если добавить ещё один фильтр, то расширить будет трудновато, но вряд ли его ведь добавят))
   const all = filterAllBtn.children[0]
   const active = filterActiveBtn.children[0]
   const comp = filterCompletedBtn.children[0]
 
   const cn = 'selected'
+  switch (filter) {
+    case 'all':
+      if (!all.classList.contains(cn)) {
+        if (active.classList.contains(cn)) {
+          active.classList.remove(cn)
+        } else {
+          comp.classList.remove(cn)
+        }
 
-  if (i === 0) {
-    if (all.classList.contains(cn)) {
-      return
-    } else {
-      if (active.classList.contains(cn)) {
-        active.classList.remove(cn)
-      } else {
-        comp.classList.remove(cn)
+        all.classList.add(cn)
       }
-
-      all.classList.add(cn)
-      return
-    }
-  }
-
-  if (i === 1) {
-    if (active.classList.contains(cn)) {
-      return
-    } else {
-      if (all.classList.contains(cn)) {
-        all.classList.remove(cn)
-      } else {
-        comp.classList.remove(cn)
+      break;
+    case 'active':
+      if (!active.classList.contains(cn)) {
+        if (all.classList.contains(cn)) {
+          all.classList.remove(cn)
+        } else {
+          comp.classList.remove(cn)
+        }
+        active.classList.add(cn)
       }
+      break;
+    case 'completed':
+      if (!comp.classList.contains(cn)) {
+        if (active.classList.contains(cn)) {
+          active.classList.remove(cn)
+        } else {
+          all.classList.remove(cn)
+        }
 
-      active.classList.add(cn)
-      return
-    }
-  }
-
-  if (i === 2) {
-    if (comp.classList.contains(cn)) {
-      return
-    } else {
-      if (active.classList.contains(cn)) {
-        active.classList.remove(cn)
-      } else {
-        all.classList.remove(cn)
+        comp.classList.add(cn)
       }
+      break;
 
-      comp.classList.add(cn)
-      return
-    }
+    default:
+      break;
   }
-  // не свитч кейс просто потому что так хочется
-
-  console.log('Ошибка в setFilterSelected, передано некорректное значение. Принимаются только 0, 1 и 2')
+  console.log('Ошибка в setFilterSelected, передано некорректное значение. Принимаются только all, active и completed')
 }
 
 // обработчики нижних трех кнопок в футере
-const showAll = () => {
+// на вход all, active, something
+const showSmth = (filter) => {
   const children = todoListUl.children;
   for (let i = 0; i < children.length; i++) {
     const currentChild = children[i]
-    if (currentChild.classList.contains('hide')) {
-      currentChild.classList.remove('hide')
+    switch (filter) {
+      case "all":
+        if (currentChild.classList.contains('hide')) {
+          currentChild.classList.remove('hide')
+        }
+        break;
+      case "active":
+        if (currentChild.classList.contains('completed')) {
+          currentChild.classList.add('hide')
+        } else if (currentChild.classList.contains('hide')) {
+          currentChild.classList.remove('hide')
+        }
+        break;
+
+      case "completed":
+        if (!currentChild.classList.contains('completed')) {
+          currentChild.classList.add('hide')
+        } else if (currentChild.classList.contains('hide')) {
+          currentChild.classList.remove('hide')
+        }
+        break;
+
+      default:
+        break;
     }
   }
-
-  setFilterSelected(0)
-}
-
-const showActive = () => {
-  const children = todoListUl.children;
-  for (let i = 0; i < children.length; i++) {
-    const currentChild = children[i]
-    if (currentChild.classList.contains('completed')) {
-      currentChild.classList.add('hide')
-    } else if (currentChild.classList.contains('hide')) {
-      currentChild.classList.remove('hide')
-    }
-  }
-
-  setFilterSelected(1)
-}
-
-const showCompleted = () => {
-  const children = todoListUl.children;
-  for (let i = 0; i < children.length; i++) {
-    const currentChild = children[i]
-    if (!currentChild.classList.contains('completed')) {
-      currentChild.classList.add('hide')
-    } else if (currentChild.classList.contains('hide')) {
-      currentChild.classList.remove('hide')
-    }
-  }
-
-  setFilterSelected(2)
+  setFilterSelected(filter)
 }
 
 // удаление всех отмеченных тасков
@@ -366,9 +349,9 @@ const clearCompleted = () => {
 
 
 const addEventListeners = () => {
-  filterAllBtn.addEventListener('click', () => showAll())
-  filterActiveBtn.addEventListener('click', () => showActive())
-  filterCompletedBtn.addEventListener('click', () => showCompleted())
+  filterAllBtn.addEventListener('click', () => showSmth('all'))
+  filterActiveBtn.addEventListener('click', () => showSmth('active'))
+  filterCompletedBtn.addEventListener('click', () => showSmth('completed'))
 
   clearBtn.addEventListener("click", () => clearCompleted())
   toggleAllBtn.addEventListener("click", () => toggleAllTodos())
