@@ -143,13 +143,8 @@ const removeTodo = (id) => {
   const newArray = todoList.filter(todo => todo.id.toString() !== id.toString())
   todoList = newArray
 
-  if (todoCompleted) {
-    completedCount -= 1
-  } else {
-    notCompletedCount -= 1
-  }
-
   todoListUl.innerHTML = ""
+  // можно не учитывать удаленный узел, в инициалайз их количество обнуляется и пересчитывается
   initializeTodos(todoList)
   setTodosLS()
 }
@@ -222,7 +217,6 @@ const toggleAllTodos = () => {
   } else {
     // есть тудушки, которые выполнены и те, которым нужно установить checked тру
     notCheckedIdsList.forEach(id => setCheckedTodo(id))
-
   }
 
   initializeTodos()
@@ -338,8 +332,6 @@ const showSmth = (filter) => {
 const clearCompleted = () => {
   const newArray = todoList.filter(todo => todo.completed !== true)
   todoList = newArray
-
-  completedCount = 0
 
   todoListUl.innerHTML = ""
   initializeTodos(todoList)
