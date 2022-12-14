@@ -24,97 +24,94 @@ const setTodosLS = () => {
 }
 
 const createTodoNode = (title, id, completed) => {
-  // вид туду айтема: в ли добавляется класс completed если завеоешн или editing если меняется текст у тудушки
-  // <li class="" data-id="1">
-  //   <div class="todo__item">
-  //     <input class="todo__toggle" type="checkbox">
-  //     <label class="todo__text"> Певрое задание</label>
-  //     <button class="todo__remove"></button>
-  //   </div>
-  //    <input type="text" class="todo__edit"></input>
-  //  </li>
+  // в ли добавляется класс completed если завеоешн или editing если меняется текст у тудушки
+  const html = `
+      <div class="todo__item">
+        <input class="todo__toggle" type="checkbox" ${completed ? "checked" : ""}>
+        <label class="todo__text">${title}</label>
+        <button class="todo__remove"></button>
+      </div>
+      <input type="text" class="todo__edit"></input>`
 
-  const listItem = document.createElement("li")
-  const blockItem = document.createElement("div")
-  const listItemCheckbox = document.createElement("input")
-  const listItemLabel = document.createElement("label")
-  const buttonItem = document.createElement("button")
-  const editInput = document.createElement("input")
-
-  const todoNode = document.createDocumentFragment()
-
-  listItem.setAttribute('id', id)
-  completed && listItem.classList.add('completed')
-
-  blockItem.classList.add('todo__item')
-
-  listItemCheckbox.type = 'checkbox'
-  listItemCheckbox.classList.add('todo__toggle')
+  const todoNode = document.createElement('li')
+  todoNode.setAttribute('id', id)
   if (completed) {
-    listItemCheckbox.checked = true
+    todoNode.classList.add('completed')
   }
+  todoNode.innerHTML = html
 
+  addEventListenersToNode(todoNode, id)
+  return todoNode
+}
+
+const addEventListenersToCheckbox = (listItemCheckbox, todoNode, id) => {
   listItemCheckbox.addEventListener('click', (e) => {
     let check = e.target.checked
     setCheckedTodo(id)
     listItemCheckbox.checked = check
 
-    if (check && !listItem.classList.contains('completed')) {
+    if (check && !todoNode.classList.contains('completed')) {
       // поставить галочку
-      listItem.classList.add('completed')
+      todoNode.classList.add('completed')
       completedCount += 1
       notCompletedCount -= 1
       setCompletedBlockVisible()
       setCountNotCompletedTodos()
     }
-    if (!check && listItem.classList.contains('completed')) {
+
+    if (!check && todoNode.classList.contains('completed')) {
       // удалить галочку
-      listItem.classList.remove('completed')
+      todoNode.classList.remove('completed')
+
       completedCount -= 1
       notCompletedCount += 1
       setCompletedBlockVisible()
       setCountNotCompletedTodos()
     }
   })
+}
 
-  listItemLabel.classList.add('todo__text')
+const addEventListenersToLabel = (listItemLabel, todoNode, editInput) => {
   listItemLabel.addEventListener('dblclick', () => {
-    listItem.classList.add('editing')
+    todoNode.classList.add('editing')
     editInput.value = listItemLabel.innerText
     editInput.focus()
   })
+}
 
-  listItemLabel.innerHTML = title
-
-  buttonItem.classList.add('todo__remove')
+const addEventListenersToButton = (buttonItem, id) => {
   buttonItem.addEventListener('click', () => removeTodo(id))
+}
 
-  editInput.classList.add('todo__edit')
-
-
+const addEventListenersToEdit = (editInput, listItemLabel, todoNode, id) => {
   const changeHandler = () => {
     const title = editInput.value
-    listItem.classList.remove('editing')
+    todoNode.classList.remove('editing')
     listItemLabel.innerText = title
     setTitleTodo(title, id)
   }
 
-
   editInput.addEventListener('focusout', () => changeHandler())
-
   editInput.addEventListener('keypress', (e) => {
     if (e.key === "Enter") {
       e.preventDefault()
       changeHandler()
     }
   })
+}
 
-  listItem.append(blockItem, editInput)
-  blockItem.append(listItemCheckbox, listItemLabel, buttonItem)
+const addEventListenersToNode = (todoNode, id) => {
+  const editInput = todoNode.children[1]
 
-  todoNode.append(listItem)
+  const listItemCheckbox = todoNode.children[0].children[0]
+  const listItemLabel = todoNode.children[0].children[1]
+  const buttonItem = todoNode.children[0].children[2]
 
-  return todoNode
+  addEventListenersToCheckbox(listItemCheckbox, todoNode, id)
+  addEventListenersToLabel(listItemLabel, todoNode, editInput)
+  addEventListenersToButton(buttonItem, id)
+
+  addEventListenersToEdit(editInput, listItemLabel, todoNode, id)
 }
 
 const addTodoToUL = (title, id, completed = false) => {
