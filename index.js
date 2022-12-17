@@ -1,12 +1,10 @@
 const todoListUl = document.querySelector('.todo__items')
+
 const newTodoInput = document.querySelector(".header__new-todo")
 const clearBtn = document.querySelector('.footer__button')
 const toggleAllBtn = document.querySelector('.todo__toggle-all')
+const filterBtns = document.querySelectorAll('.footer__filter')
 const footerCountBlock = document.querySelector('.footer__count')
-
-const filterAllBtn = document.querySelector('.filter-all')
-const filterActiveBtn = document.querySelector('.filter-active')
-const filterCompletedBtn = document.querySelector('.filter-completed')
 
 const url = window.location.href
 const activeString = '#/active'
@@ -14,6 +12,16 @@ const completedString = '#/completed'
 
 let completedCount = 0
 let notCompletedCount = 0
+
+const addListenerKeyPressMouseOut = (item, callback, key = "Enter") => {
+  item.addEventListener('focusout', () => callback())
+  item.addEventListener('keypress', (e) => {
+    if (e.key === key) {
+      e.preventDefault()
+      callback()
+    }
+  })
+}
 
 const getTodosLS = () => {
   return localStorage.getItem('todos')
@@ -27,7 +35,7 @@ const createTodoNode = (title, id, completed) => {
   // в ли добавляется класс completed если завершен или editing если меняется текст у тудушки
   const html = `
       <div class="todo__item">
-        <input class="todo__toggle" type="checkbox" ${completed ? "checked" : ""}>
+        <input class="todo__toggle" type="checkbox" ${completed && 'checked'}>
         <label class="todo__text">${title}</label>
         <button class="todo__remove"></button>
       </div>
@@ -43,7 +51,9 @@ const createTodoNode = (title, id, completed) => {
   return todoNode
 }
 
-const addEventListenersToCheckbox = (listItemCheckbox, todoNode, id) => {
+const handleCheckbox = (listItemCheckbox, todoNode, id) => {
+  let addCompleted = 1
+
   listItemCheckbox.addEventListener('click', (e) => {
     let check = e.target.checked
     setCheckedTodo(id)
@@ -52,25 +62,22 @@ const addEventListenersToCheckbox = (listItemCheckbox, todoNode, id) => {
     if (check && !todoNode.classList.contains('completed')) {
       // поставить галочку
       todoNode.classList.add('completed')
-      completedCount += 1
-      notCompletedCount -= 1
-      setCompletedBlockVisible()
-      setCountNotCompletedTodos()
     }
 
     if (!check && todoNode.classList.contains('completed')) {
       // удалить галочку
       todoNode.classList.remove('completed')
 
-      completedCount -= 1
-      notCompletedCount += 1
-      setCompletedBlockVisible()
-      setCountNotCompletedTodos()
+      addCompleted = -1
     }
+
+    completedCount += addCompleted
+    notCompletedCount -= addCompleted
+    setCompletedInfo()
   })
 }
 
-const addEventListenersToLabel = (listItemLabel, todoNode, editInput) => {
+const handleEditLabel = (listItemLabel, todoNode, editInput) => {
   listItemLabel.addEventListener('dblclick', () => {
     todoNode.classList.add('editing')
     editInput.value = listItemLabel.innerText
@@ -78,44 +85,38 @@ const addEventListenersToLabel = (listItemLabel, todoNode, editInput) => {
   })
 }
 
-const addEventListenersToButton = (buttonItem, id) => {
+const handleRemoveItem = (buttonItem, id) => {
   buttonItem.addEventListener('click', () => removeTodo(id))
 }
 
-const addEventListenersToEdit = (editInput, listItemLabel, todoNode, id) => {
-  const changeHandler = () => {
+const handleEditItem = (editInput, listItemLabel, todoNode, id) => {
+  const editingEnds = () => {
     const title = editInput.value
     todoNode.classList.remove('editing')
     listItemLabel.innerText = title
     setTitleTodo(title, id)
   }
 
-  editInput.addEventListener('focusout', () => changeHandler())
-  editInput.addEventListener('keypress', (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      changeHandler()
-    }
-  })
+  addListenerKeyPressMouseOut(editInput, editingEnds, "Enter")
 }
 
-const addEventListenersToNode = (todoNode, id) => {
+const addNodeEventListeners = (todoNode, id) => {
   const editInput = todoNode.children[1]
 
   const listItemCheckbox = todoNode.children[0].children[0]
   const listItemLabel = todoNode.children[0].children[1]
   const buttonItem = todoNode.children[0].children[2]
 
-  addEventListenersToCheckbox(listItemCheckbox, todoNode, id)
-  addEventListenersToLabel(listItemLabel, todoNode, editInput)
-  addEventListenersToButton(buttonItem, id)
+  handleCheckbox(listItemCheckbox, todoNode, id)
+  handleEditLabel(listItemLabel, todoNode, editInput)
+  handleRemoveItem(buttonItem, id)
 
-  addEventListenersToEdit(editInput, listItemLabel, todoNode, id)
+  handleEditItem(editInput, listItemLabel, todoNode, id)
 }
 
 const addTodoToUL = (title, id, completed = false) => {
   const newTodoNode = createTodoNode(title, id, completed)
-  addEventListenersToNode(newTodoNode, id)
+  addNodeEventListeners(newTodoNode, id)
   todoListUl.appendChild(newTodoNode)
 }
 
@@ -134,16 +135,14 @@ const createTodo = () => {
   setTodosLS()
 
   notCompletedCount += 1
-  setCountNotCompletedTodos()
+  setCompletedInfo()
 }
 
 const removeTodo = (id) => {
-  const todoCompleted = todoList.find(x => x.id === id).completed
-
   const newArray = todoList.filter(todo => todo.id.toString() !== id.toString())
   todoList = newArray
-
   todoListUl.innerHTML = ""
+
   // можно не учитывать удаленный узел, в инициалайз их количество обнуляется и пересчитывается
   initializeTodos(todoList)
   setTodosLS()
@@ -163,9 +162,7 @@ const initializeTodos = () => {
   })
 
   notCompletedCount = todoList.length - completedCount
-
-  setCompletedBlockVisible()
-  setCountNotCompletedTodos()
+  setCompletedInfo()
 }
 
 // изменить текст таска
@@ -245,12 +242,17 @@ const setCountNotCompletedTodos = () => {
   footerCountBlock.innerHTML = firstPart + secondPart
 }
 
+const setCompletedInfo = () => {
+  setCompletedBlockVisible()
+  setCountNotCompletedTodos()
+}
+
 // i = all || active || completed
 const setFilterSelected = (filter) => {
   // если добавить ещё один фильтр, то расширить будет трудновато, но вряд ли его ведь добавят))
-  const all = filterAllBtn.children[0]
-  const active = filterActiveBtn.children[0]
-  const comp = filterCompletedBtn.children[0]
+  const all = filterBtns[0].children[0]
+  const active = filterBtns[1].children[0]
+  const comp = filterBtns[2].children[0]
 
   const cn = 'selected'
   switch (filter) {
@@ -274,6 +276,7 @@ const setFilterSelected = (filter) => {
         }
         active.classList.add(cn)
       }
+
       break;
     case 'completed':
       if (!comp.classList.contains(cn)) {
@@ -290,41 +293,41 @@ const setFilterSelected = (filter) => {
     default:
       break;
   }
-  console.log('Ошибка в setFilterSelected, передано некорректное значение. Принимаются только all, active и completed')
 }
 
-// обработчики нижних трех кнопок в футере
+// обработчик нижних трех кнопок в футере
 // на вход all, active, something
-const showSmth = (filter) => {
-  const children = todoListUl.children;
-  for (let i = 0; i < children.length; i++) {
-    const currentChild = children[i]
+const handleShowItems = (filter) => {
+  const items = Array.from(todoListUl.children)
+
+  items.map(todoItem => {
     switch (filter) {
       case "all":
-        if (currentChild.classList.contains('hide')) {
-          currentChild.classList.remove('hide')
+        if (todoItem.classList.contains('hide')) {
+          todoItem.classList.remove('hide')
         }
         break;
       case "active":
-        if (currentChild.classList.contains('completed')) {
-          currentChild.classList.add('hide')
-        } else if (currentChild.classList.contains('hide')) {
-          currentChild.classList.remove('hide')
+        if (todoItem.classList.contains('completed')) {
+          todoItem.classList.add('hide')
+        } else if (todoItem.classList.contains('hide')) {
+          todoItem.classList.remove('hide')
         }
         break;
 
       case "completed":
-        if (!currentChild.classList.contains('completed')) {
-          currentChild.classList.add('hide')
-        } else if (currentChild.classList.contains('hide')) {
-          currentChild.classList.remove('hide')
+        if (!todoItem.classList.contains('completed')) {
+          todoItem.classList.add('hide')
+        } else if (todoItem.classList.contains('hide')) {
+          todoItem.classList.remove('hide')
         }
         break;
 
       default:
         break;
     }
-  }
+  })
+
   setFilterSelected(filter)
 }
 
@@ -338,30 +341,23 @@ const clearCompleted = () => {
   setTodosLS()
 }
 
-
-
 const addEventListeners = () => {
-  filterAllBtn.addEventListener('click', () => showSmth('all'))
-  filterActiveBtn.addEventListener('click', () => showSmth('active'))
-  filterCompletedBtn.addEventListener('click', () => showSmth('completed'))
+  filterBtns.forEach(div => div.addEventListener('click', () => {
+    const btn = div.children[0]
+    const cn = btn.innerHTML.toLowerCase()
+    handleShowItems(cn)
+  }))
 
   clearBtn.addEventListener("click", () => clearCompleted())
   toggleAllBtn.addEventListener("click", () => toggleAllTodos())
 
-  newTodoInput.addEventListener('focusout', () => createTodo())
-  newTodoInput.addEventListener('keypress', (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      createTodo()
-    }
-  })
+  addListenerKeyPressMouseOut(newTodoInput, createTodo, "Enter")
 }
 
 let todoList = JSON.parse(getTodosLS()) || []
 
 const initializeApp = () => {
   addEventListeners()
-
   initializeTodos()
 
   if (url.includes(activeString)) {
