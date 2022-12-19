@@ -300,7 +300,7 @@ const setFilterSelected = (filter) => {
 const handleShowItems = (filter) => {
   const items = Array.from(todoListUl.children)
 
-  items.map(todoItem => {
+  items.forEach(todoItem => {
     switch (filter) {
       case "all":
         if (todoItem.classList.contains('hide')) {
