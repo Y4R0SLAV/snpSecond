@@ -119,9 +119,10 @@ const addTodoToUL = (title, id, completed = false) => {
 const createTodo = () => {
   const title = newTodoInput.value
 
-  if (title === "") {
+  if (title.trim() === "") {
     return
   }
+
 
   const id = Date.now().toString()
   newTodoInput.value = ""
@@ -244,7 +245,7 @@ const setFilterSelected = (filter) => {
 
   const cn = 'selected'
   document.querySelector('a.' + cn).classList.remove(cn)
-  
+
   switch (filter) {
     case 'all':
       all.classList.add(cn)
